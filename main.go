@@ -27,6 +27,7 @@ var addFlag string
 var completeFlag int
 var removeFlag int
 var showCompletedFlag bool
+var completedOnlyFlag bool
 var configFormat *columnize.Config
 
 func main() {
@@ -60,6 +61,7 @@ func parseFlags() {
 	flag.IntVar(&completeFlag, "c", -1, "Complete a todo by index `-c 0`.")
 	flag.IntVar(&removeFlag, "r", -1, "Remove a todo by index `-r 0`.")
 	flag.BoolVar(&showCompletedFlag, "show-completed", false, "Show Completed Todos `--show-completed`")
+	flag.BoolVar(&completedOnlyFlag, "only-completed", false, "Show Only Completed Todos `--only-completed`")
 	flag.Parse()
 }
 
@@ -95,6 +97,10 @@ func list(todos []todo) {
 	for i, x := range todos {
 		if showCompletedFlag {
 			output = append(output, printTodo(i, x))
+		} else if completedOnlyFlag {
+			if x.Completed {
+				output = append(output, printTodo(i, x))
+			}
 		} else {
 			if !x.Completed {
 				output = append(output, printTodo(i, x))
