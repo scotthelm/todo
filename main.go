@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/user"
 	"time"
+
+	"github.com/ryanuber/columnize"
 )
 
 type todo struct {
@@ -25,23 +27,6 @@ var addFlag string
 var completeFlag int
 var removeFlag int
 
-func (t *todoApp) add(td todo) error {
-	b, err := json.Marshal(&td)
-	if err != nil {
-		fmt.Printf("There was an error marshaling the todo: %v\n", err)
-	}
-	f, err := os.OpenFile(t.DataFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("There was an error opening the file: %v\n", err)
-	}
-	defer f.Close()
-
-	w := bufio.NewWriter(f)
-	_, err = w.WriteString(fmt.Sprintf("%v\n", string(b)))
-	w.Flush()
-
-	return err
-}
 func main() {
 	parseFlags()
 	usr, err := user.Current()
@@ -50,11 +35,15 @@ func main() {
 	}
 	app := todoApp{DataFilePath: fmt.Sprintf("%s/.todo", usr.HomeDir)}
 
-	add(app)
 	todos := read(app)
+	todos = add(todos)
 	todos = complete(todos)
 	todos = remove(todos)
-	write(todos, app)
+	err = write(todos, app)
+	if err != nil {
+		fmt.Printf("error writing file: %v", err)
+		os.Exit(1)
+	}
 	list(todos)
 
 }
@@ -66,56 +55,79 @@ func parseFlags() {
 	flag.Parse()
 }
 
-func add(app todoApp) {
+func add(todos []todo) []todo {
 	if len(addFlag) > 0 {
-		app.add(todo{Description: addFlag, Completed: false})
+		todos = append(todos, todo{Description: addFlag, Completed: false, CreatedAt: time.Now()})
 	}
+	return todos
 }
 
 func complete(todos []todo) []todo {
 	if completeFlag > -1 {
-
+		for i := range todos {
+			if i == completeFlag {
+				todos[i].Completed = !todos[i].Completed
+				todos[i].CompletedAt = time.Now()
+			}
+		}
 	}
 	return todos
 }
 
 func remove(todos []todo) []todo {
 	if removeFlag > -1 {
-
+		todos = append(todos[:removeFlag], todos[removeFlag+1:]...)
 	}
 	return todos
 }
 
 func list(todos []todo) {
+	var output = make([]string, 0)
 	for i, x := range todos {
-		printTodo(i, x)
+		output = append(output, printTodo(i, x))
 	}
+	result := columnize.SimpleFormat(output)
+	fmt.Println(result)
 }
 
-func write(todos []todo, app todoApp) {
-	os.Remove(app.DataFilePath)
+func write(todos []todo, app todoApp) error {
+	f, err := os.OpenFile(app.DataFilePath, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Printf("There was an error opening the file: %v\n", err)
+		os.Exit(1)
+	}
+	f.Truncate(0)
+	f.Seek(0, 0)
+	defer f.Close()
+	w := bufio.NewWriter(f)
 	for _, t := range todos {
-		app.add(t)
+
+		b, err := json.Marshal(&t)
+		if err != nil {
+			fmt.Printf("There was an error marshaling the todo: %v\n", err)
+			os.Exit(1)
+		}
+		_, err = w.WriteString(fmt.Sprintf("%v\n", string(b)))
+		w.Flush()
 	}
+	return err
 }
 
-func printTodo(i int, t todo) {
-	fmt.Printf("%d\t%s : %v\n", i, t.Description, t.Completed)
+func printTodo(i int, t todo) string {
+	return fmt.Sprintf("%d | %s | %v | %v", i, t.Description, t.Completed, t.CreatedAt)
 }
 
 func read(app todoApp) []todo {
 	todos := make([]todo, 0)
 	f, err := os.Open(app.DataFilePath)
 	defer f.Close()
-	if err != nil {
-		panic(fmt.Sprintf("Unable to open todo file. Try adding a todo? :%v", err))
+	if err == nil {
+		r := bufio.NewScanner(f)
+		for r.Scan() {
+			var t todo
+			json.Unmarshal(r.Bytes(), &t)
+			todos = append(todos, t)
+		}
 	}
-	r := bufio.NewScanner(f)
-	for r.Scan() {
-		var t todo
-		json.Unmarshal(r.Bytes(), &t)
-		todos = append(todos, t)
-	}
-
 	return todos
 }
