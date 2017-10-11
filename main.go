@@ -26,8 +26,11 @@ type todoApp struct {
 var addFlag string
 var completeFlag int
 var removeFlag int
+var showCompletedFlag bool
+var configFormat *columnize.Config
 
 func main() {
+	configureTable()
 	parseFlags()
 	usr, err := user.Current()
 	if err != nil {
@@ -48,10 +51,15 @@ func main() {
 
 }
 
+func configureTable() {
+	configFormat = columnize.DefaultConfig()
+	configFormat.Glue = " | "
+}
 func parseFlags() {
 	flag.StringVar(&addFlag, "a", "", "Add a todo using -a")
 	flag.IntVar(&completeFlag, "c", -1, "Complete a todo by index `-c 0`.")
 	flag.IntVar(&removeFlag, "r", -1, "Remove a todo by index `-r 0`.")
+	flag.BoolVar(&showCompletedFlag, "show-completed", false, "Show Completed Todos `--show-completed`")
 	flag.Parse()
 }
 
@@ -83,11 +91,22 @@ func remove(todos []todo) []todo {
 
 func list(todos []todo) {
 	var output = make([]string, 0)
+	output = append(output, "Num | Description | Completed | Created At")
 	for i, x := range todos {
-		output = append(output, printTodo(i, x))
+		if showCompletedFlag {
+			output = append(output, printTodo(i, x))
+		} else {
+			if !x.Completed {
+				output = append(output, printTodo(i, x))
+			}
+		}
 	}
-	result := columnize.SimpleFormat(output)
+	result := columnize.Format(output, configFormat)
 	fmt.Println(result)
+}
+
+func printTodo(i int, t todo) string {
+	return fmt.Sprintf("%d | %s | %v | %v", i, t.Description, t.Completed, t.CreatedAt)
 }
 
 func write(todos []todo, app todoApp) error {
@@ -111,10 +130,6 @@ func write(todos []todo, app todoApp) error {
 		w.Flush()
 	}
 	return err
-}
-
-func printTodo(i int, t todo) string {
-	return fmt.Sprintf("%d | %s | %v | %v", i, t.Description, t.Completed, t.CreatedAt)
 }
 
 func read(app todoApp) []todo {
