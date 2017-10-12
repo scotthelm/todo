@@ -120,7 +120,7 @@ func printTodo(i int, t todo) string {
 		since := t.CompletedAt.Sub(t.CreatedAt)
 		elapsedTime = since - (since % time.Minute)
 	}
-	return fmt.Sprintf("%d | %s | %v | %v | %v", i, t.Description, t.Completed, t.CreatedAt, elapsedTime)
+	return fmt.Sprintf("%d | %s | %v | %v | %v", i, t.Description, t.Completed, t.CreatedAt.Format("2006-01-02@03:04:05"), elapsedTime)
 }
 
 func write(todos []todo, app todoApp) error {
