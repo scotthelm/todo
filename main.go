@@ -93,7 +93,7 @@ func remove(todos []todo) []todo {
 
 func list(todos []todo) {
 	var output = make([]string, 0)
-	output = append(output, "Num | Description | Completed | Created At")
+	output = append(output, "Num | Description | Completed | Created At | Completion Time")
 	for i, x := range todos {
 		if showCompletedFlag {
 			output = append(output, printTodo(i, x))
@@ -112,7 +112,15 @@ func list(todos []todo) {
 }
 
 func printTodo(i int, t todo) string {
-	return fmt.Sprintf("%d | %s | %v | %v", i, t.Description, t.Completed, t.CreatedAt)
+	var elapsedTime time.Duration
+	if t.CompletedAt.IsZero() {
+		since := time.Since(t.CreatedAt)
+		elapsedTime = since - (since % time.Minute)
+	} else {
+		since := t.CompletedAt.Sub(t.CreatedAt)
+		elapsedTime = since - (since % time.Minute)
+	}
+	return fmt.Sprintf("%d | %s | %v | %v | %v", i, t.Description, t.Completed, t.CreatedAt, elapsedTime)
 }
 
 func write(todos []todo, app todoApp) error {
