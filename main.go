@@ -35,17 +35,13 @@ func main() {
 	completedOnlyFlag := flag.Bool("only-completed", false, "Show Only Completed Todos")
 	flag.Parse()
 
-	usr, err := user.Current()
-	if err != nil {
-		panic(fmt.Sprintf("could not get current user: %v", err))
-	}
-	app := todoApp{DataFilePath: fmt.Sprintf("%s/.todo", usr.HomeDir)}
+	app := newAppForUser(".todo")
 
 	todos := read(app)
 	todos = add(todos, *addFlag)
 	todos = complete(todos, *completeFlag)
 	todos = remove(todos, *removeFlag)
-	err = write(todos, app)
+	err := write(todos, app)
 	if err != nil {
 		fmt.Printf("error writing file: %v", err)
 		os.Exit(1)
@@ -58,6 +54,14 @@ func main() {
 func configureTable() {
 	configFormat = columnize.DefaultConfig()
 	configFormat.Glue = " | "
+}
+
+func newAppForUser(dataFileName string) todoApp {
+	usr, err := user.Current()
+	if err != nil {
+		panic(fmt.Sprintf("could not get current user: %v", err))
+	}
+	return todoApp{DataFilePath: fmt.Sprintf("%s/%s", usr.HomeDir, dataFileName)}
 }
 
 func add(todos []todo, addFlag string) []todo {
@@ -114,13 +118,20 @@ func printTodo(i int, t todo) string {
 		since := t.CompletedAt.Sub(t.CreatedAt)
 		elapsedTime = since - (since % time.Minute)
 	}
-	return fmt.Sprintf("%d | %s | %v | %v | %v", i, t.Description, t.Completed, t.CreatedAt.Format("2006-01-02@03:04:05"), elapsedTime)
+	return fmt.Sprintf(
+		"%d | %s | %v | %v | %v",
+		i,
+		t.Description,
+		t.Completed,
+		t.CreatedAt.Format("2006-01-02@03:04:05"),
+		elapsedTime,
+	)
 }
 
 func write(todos []todo, app todoApp) error {
 	f, err := os.OpenFile(app.DataFilePath, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		fmt.Printf("There was an error opening the file: %v\n", err)
+		os.Stderr.WriteString(fmt.Sprintf("There was an error opening the file: %v\n", err))
 		os.Exit(1)
 	}
 	f.Truncate(0)
@@ -131,7 +142,7 @@ func write(todos []todo, app todoApp) error {
 
 		b, err := json.Marshal(&t)
 		if err != nil {
-			fmt.Printf("There was an error marshaling the todo: %v\n", err)
+			os.Stderr.WriteString(fmt.Sprintf("There was an error marshaling the todo: %v\n", err))
 			os.Exit(1)
 		}
 		_, err = w.WriteString(fmt.Sprintf("%v\n", string(b)))
@@ -144,13 +155,15 @@ func read(app todoApp) []todo {
 	todos := make([]todo, 0)
 	f, err := os.Open(app.DataFilePath)
 	defer f.Close()
-	if err == nil {
-		r := bufio.NewScanner(f)
-		for r.Scan() {
-			var t todo
-			json.Unmarshal(r.Bytes(), &t)
-			todos = append(todos, t)
-		}
+	if err != nil {
+		os.Stderr.WriteString(fmt.Sprintf("unable to read todo file: %v", err))
+		os.Exit(1)
+	}
+	r := bufio.NewScanner(f)
+	for r.Scan() {
+		var t todo
+		json.Unmarshal(r.Bytes(), &t)
+		todos = append(todos, t)
 	}
 	return todos
 }
