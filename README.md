@@ -7,7 +7,7 @@ at `~/.todo`. This is currently not configurable (unless you build from source
 and modify the `app.DataFilePath`). The output is intended be pipe-able to
 other applications for further manipulation
 
-<p style="text-align:center">
+<p align="center">
 <img alt="usage screencast" src="https://user-images.githubusercontent.com/348407/31581016-b281e15e-b12d-11e7-8d95-50366f6af938.gif" />
 </p>
 
