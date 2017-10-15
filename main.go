@@ -33,6 +33,7 @@ func main() {
 	removeFlag := flag.Int("r", -1, "Remove a todo by Num")
 	showCompletedFlag := flag.Bool("show-completed", false, "Show Completed Todos")
 	completedOnlyFlag := flag.Bool("only-completed", false, "Show Only Completed Todos")
+	backupFlag := flag.String("b", "", "Backup Todo File To Path")
 	flag.Parse()
 
 	app := newAppForUser(".todo")
@@ -41,7 +42,8 @@ func main() {
 	todos = add(todos, *addFlag)
 	todos = complete(todos, *completeFlag)
 	todos = remove(todos, *removeFlag)
-	err := write(todos, app)
+	err := write(todos, app.DataFilePath)
+	err = backup(todos, *backupFlag)
 	if err != nil {
 		fmt.Printf("error writing file: %v", err)
 		os.Exit(1)
@@ -128,8 +130,8 @@ func printTodo(i int, t todo) string {
 	)
 }
 
-func write(todos []todo, app todoApp) error {
-	f, err := os.OpenFile(app.DataFilePath, os.O_CREATE|os.O_WRONLY, 0644)
+func write(todos []todo, path string) error {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		os.Stderr.WriteString(fmt.Sprintf("There was an error opening the file: %v\n", err))
 		os.Exit(1)
@@ -166,4 +168,11 @@ func read(app todoApp) []todo {
 		todos = append(todos, t)
 	}
 	return todos
+}
+
+func backup(todos []todo, path string) error {
+	if path != "" && path != "./todo" {
+		return write(todos, path)
+	}
+	return nil
 }
