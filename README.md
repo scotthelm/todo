@@ -23,6 +23,8 @@ $  todo --help
 Usage of todo:
   -a string
     	Add a todo
+  -b string
+    	Backup Todo File To Path
   -c int
     	Complete a todo by Num (default -1)
   -only-completed
