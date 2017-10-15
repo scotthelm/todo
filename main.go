@@ -23,16 +23,18 @@ type todoApp struct {
 	DataFilePath string
 }
 
-var addFlag string
-var completeFlag int
-var removeFlag int
-var showCompletedFlag bool
-var completedOnlyFlag bool
 var configFormat *columnize.Config
 
 func main() {
 	configureTable()
-	parseFlags()
+
+	addFlag := flag.String("a", "", "Add a todo")
+	completeFlag := flag.Int("c", -1, "Complete a todo by Num")
+	removeFlag := flag.Int("r", -1, "Remove a todo by Num")
+	showCompletedFlag := flag.Bool("show-completed", false, "Show Completed Todos")
+	completedOnlyFlag := flag.Bool("only-completed", false, "Show Only Completed Todos")
+	flag.Parse()
+
 	usr, err := user.Current()
 	if err != nil {
 		panic(fmt.Sprintf("could not get current user: %v", err))
@@ -40,39 +42,32 @@ func main() {
 	app := todoApp{DataFilePath: fmt.Sprintf("%s/.todo", usr.HomeDir)}
 
 	todos := read(app)
-	todos = add(todos)
-	todos = complete(todos)
-	todos = remove(todos)
+	todos = add(todos, *addFlag)
+	todos = complete(todos, *completeFlag)
+	todos = remove(todos, *removeFlag)
 	err = write(todos, app)
 	if err != nil {
 		fmt.Printf("error writing file: %v", err)
 		os.Exit(1)
 	}
-	list(todos)
-
+	output := list(todos, *showCompletedFlag, *completedOnlyFlag)
+	result := columnize.Format(output, configFormat)
+	fmt.Println(result)
 }
 
 func configureTable() {
 	configFormat = columnize.DefaultConfig()
 	configFormat.Glue = " | "
 }
-func parseFlags() {
-	flag.StringVar(&addFlag, "a", "", "Add a todo using -a")
-	flag.IntVar(&completeFlag, "c", -1, "Complete a todo by index `-c 0`.")
-	flag.IntVar(&removeFlag, "r", -1, "Remove a todo by index `-r 0`.")
-	flag.BoolVar(&showCompletedFlag, "show-completed", false, "Show Completed Todos `--show-completed`")
-	flag.BoolVar(&completedOnlyFlag, "only-completed", false, "Show Only Completed Todos `--only-completed`")
-	flag.Parse()
-}
 
-func add(todos []todo) []todo {
+func add(todos []todo, addFlag string) []todo {
 	if len(addFlag) > 0 {
 		todos = append(todos, todo{Description: addFlag, Completed: false, CreatedAt: time.Now()})
 	}
 	return todos
 }
 
-func complete(todos []todo) []todo {
+func complete(todos []todo, completeFlag int) []todo {
 	if completeFlag > -1 {
 		for i := range todos {
 			if i == completeFlag {
@@ -84,14 +79,14 @@ func complete(todos []todo) []todo {
 	return todos
 }
 
-func remove(todos []todo) []todo {
+func remove(todos []todo, removeFlag int) []todo {
 	if removeFlag > -1 {
 		todos = append(todos[:removeFlag], todos[removeFlag+1:]...)
 	}
 	return todos
 }
 
-func list(todos []todo) {
+func list(todos []todo, showCompletedFlag, completedOnlyFlag bool) []string {
 	var output = make([]string, 0)
 	output = append(output, "Num | Description | Completed | Created At | Completion Time")
 	for i, x := range todos {
@@ -107,8 +102,7 @@ func list(todos []todo) {
 			}
 		}
 	}
-	result := columnize.Format(output, configFormat)
-	fmt.Println(result)
+	return output
 }
 
 func printTodo(i int, t todo) string {
