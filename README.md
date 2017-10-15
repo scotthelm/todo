@@ -22,15 +22,15 @@ in a directory in your path.
 $  todo --help
 Usage of todo:
   -a string
-    	Add a todo using -a
-  -c -c 0
-    	Complete a todo by index -c 0. (default -1)
-  -only-completed --only-completed
-    	Show Only Completed Todos --only-completed
-  -r -r 0
-    	Remove a todo by index -r 0. (default -1)
-  -show-completed --show-completed
-    	Show Completed Todos --show-completed
+    	Add a todo
+  -c int
+    	Complete a todo by Num (default -1)
+  -only-completed
+    	Show Only Completed Todos
+  -r int
+    	Remove a todo by Num (default -1)
+  -show-completed
+    	Show Completed Todos
 ```
 
 ## Contributing
