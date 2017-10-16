@@ -63,7 +63,16 @@ func newAppForUser(dataFileName string) todoApp {
 	if err != nil {
 		panic(fmt.Sprintf("could not get current user: %v", err))
 	}
-	return todoApp{DataFilePath: fmt.Sprintf("%s/%s", usr.HomeDir, dataFileName)}
+	dataPath := fmt.Sprintf("%s/%s", usr.HomeDir, dataFileName)
+	// check if the data file exists ...
+	if _, err := os.Stat(dataPath); os.IsNotExist(err) {
+		// ... and create it if it doesn't
+		_, err = os.OpenFile(dataPath, os.O_RDONLY|os.O_CREATE, 0666)
+		if err != nil {
+			panic(fmt.Sprintf("failed to create data file %s", dataPath))
+		}
+	}
+	return todoApp{DataFilePath: dataPath}
 }
 
 func add(todos []todo, addFlag string) []todo {
