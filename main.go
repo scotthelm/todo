@@ -74,12 +74,13 @@ func add(todos []todo, addFlag string) []todo {
 }
 
 func complete(todos []todo, completeFlag int) []todo {
-	if completeFlag > -1 {
-		for i := range todos {
-			if i == completeFlag {
-				todos[i].Completed = !todos[i].Completed
-				todos[i].CompletedAt = time.Now()
-			}
+	if completeFlag < 0 || completeFlag > len(todos)-1 {
+		return todos
+	}
+	for i := range todos {
+		if i == completeFlag {
+			todos[i].Completed = !todos[i].Completed
+			todos[i].CompletedAt = time.Now()
 		}
 	}
 	return todos
@@ -156,11 +157,11 @@ func write(todos []todo, path string) error {
 func read(app todoApp) []todo {
 	todos := make([]todo, 0)
 	f, err := os.OpenFile(app.DataFilePath, os.O_CREATE|os.O_RDONLY, 0644)
-	defer f.Close()
 	if err != nil {
 		os.Stderr.WriteString(fmt.Sprintf("unable to read todo file: %v", err))
 		os.Exit(1)
 	}
+	defer f.Close()
 	r := bufio.NewScanner(f)
 	for r.Scan() {
 		var t todo
