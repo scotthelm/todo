@@ -155,7 +155,7 @@ func write(todos []todo, path string) error {
 
 func read(app todoApp) []todo {
 	todos := make([]todo, 0)
-	f, err := os.Open(app.DataFilePath)
+	f, err := os.OpenFile(app.DataFilePath, os.O_CREATE|os.O_RDONLY, 0644)
 	defer f.Close()
 	if err != nil {
 		os.Stderr.WriteString(fmt.Sprintf("unable to read todo file: %v", err))
