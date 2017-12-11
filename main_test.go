@@ -56,36 +56,26 @@ func TestNoRemoveTodoWithNoRemoveFlag(t *testing.T) {
 	}
 }
 
-func TestListWithNoCompleted(t *testing.T) {
-	todos := todosWithCompletion()
-	showCompletedFlag := false
-	onlyCompletedFlag := false
-	val := list(todos, showCompletedFlag, onlyCompletedFlag)
-	// list adds a header row
-	if len(val) > 3 {
-		t.Error("showed completed when should not")
-	}
+var listWithCompletion = []struct {
+	List    []todo
+	Show    bool
+	Only    bool
+	Length  int
+	Message string
+}{
+	{todosWithCompletion(), false, false, 3, "showed completed when should not"},
+	{todosWithCompletion(), true, false, 4, "wrong number of todos with show completed"},
+	{todosWithCompletion(), false, true, 2, "wrong number of todos with only completed"},
 }
 
-func TestListWithShowCompleted(t *testing.T) {
-	todos := todosWithCompletion()
-	showCompletedFlag := true
-	onlyCompletedFlag := false
-	val := list(todos, showCompletedFlag, onlyCompletedFlag)
-	// list adds a header row
-	if len(val) != 4 {
-		t.Error("wrong number of todos with show completed")
-	}
-}
+func TestListWithCompletion(t *testing.T) {
+	for _, lwc := range listWithCompletion {
 
-func TestListWithOnlyCompleted(t *testing.T) {
-	todos := todosWithCompletion()
-	showCompletedFlag := false
-	onlyCompletedFlag := true
-	val := list(todos, showCompletedFlag, onlyCompletedFlag)
-	// list adds a header row
-	if len(val) != 2 {
-		t.Error("wrong number of todos with only completed")
+		val := list(lwc.List, lwc.Show, lwc.Only)
+		// list adds a header row
+		if len(val) != lwc.Length {
+			t.Error(lwc.Message)
+		}
 	}
 }
 
