@@ -39,11 +39,7 @@ func TestNoCompleteTodoWithNegativeOneCompleteFlag(t *testing.T) {
 }
 
 func TestRemoveTodoWithRemoveFlag(t *testing.T) {
-	todos := []todo{
-		todo{Description: "a"},
-		todo{Description: "b"},
-		todo{Description: "c"},
-	}
+	todos := defaultTodos()
 	removeFlag := 1
 	val := remove(todos, removeFlag)
 	if len(val) != 2 {
@@ -52,11 +48,7 @@ func TestRemoveTodoWithRemoveFlag(t *testing.T) {
 }
 
 func TestNoRemoveTodoWithNoRemoveFlag(t *testing.T) {
-	todos := []todo{
-		todo{Description: "a"},
-		todo{Description: "b"},
-		todo{Description: "c"},
-	}
+	todos := defaultTodos()
 	removeFlag := -1
 	val := remove(todos, removeFlag)
 	if len(val) != 3 {
@@ -65,11 +57,7 @@ func TestNoRemoveTodoWithNoRemoveFlag(t *testing.T) {
 }
 
 func TestListWithNoCompleted(t *testing.T) {
-	todos := []todo{
-		todo{Description: "a", Completed: false},
-		todo{Description: "b", Completed: false},
-		todo{Description: "c", Completed: true},
-	}
+	todos := todosWithCompletion()
 	showCompletedFlag := false
 	onlyCompletedFlag := false
 	val := list(todos, showCompletedFlag, onlyCompletedFlag)
@@ -80,11 +68,7 @@ func TestListWithNoCompleted(t *testing.T) {
 }
 
 func TestListWithShowCompleted(t *testing.T) {
-	todos := []todo{
-		todo{Description: "a", Completed: false},
-		todo{Description: "b", Completed: false},
-		todo{Description: "c", Completed: true},
-	}
+	todos := todosWithCompletion()
 	showCompletedFlag := true
 	onlyCompletedFlag := false
 	val := list(todos, showCompletedFlag, onlyCompletedFlag)
@@ -95,16 +79,28 @@ func TestListWithShowCompleted(t *testing.T) {
 }
 
 func TestListWithOnlyCompleted(t *testing.T) {
-	todos := []todo{
-		todo{Description: "a", Completed: false},
-		todo{Description: "b", Completed: false},
-		todo{Description: "c", Completed: true},
-	}
+	todos := todosWithCompletion()
 	showCompletedFlag := false
 	onlyCompletedFlag := true
 	val := list(todos, showCompletedFlag, onlyCompletedFlag)
 	// list adds a header row
 	if len(val) != 2 {
 		t.Error("wrong number of todos with only completed")
+	}
+}
+
+func todosWithCompletion() []todo {
+	return []todo{
+		todo{Description: "a", Completed: false},
+		todo{Description: "b", Completed: false},
+		todo{Description: "c", Completed: true},
+	}
+}
+
+func defaultTodos() []todo {
+	return []todo{
+		todo{Description: "a"},
+		todo{Description: "b"},
+		todo{Description: "c"},
 	}
 }
