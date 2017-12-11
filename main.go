@@ -134,8 +134,7 @@ func printTodo(i int, t todo) string {
 func write(todos []todo, path string) error {
 	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		os.Stderr.WriteString(fmt.Sprintf("There was an error opening the file: %v\n", err))
-		os.Exit(1)
+		reportErrorAndExit("There was an error opening the file: %v\n", err)
 	}
 	f.Truncate(0)
 	f.Seek(0, 0)
@@ -145,8 +144,7 @@ func write(todos []todo, path string) error {
 
 		b, err := json.Marshal(&t)
 		if err != nil {
-			os.Stderr.WriteString(fmt.Sprintf("There was an error marshaling the todo: %v\n", err))
-			os.Exit(1)
+			reportErrorAndExit("There was an error marshaling the todo: %v\n", err)
 		}
 		_, err = w.WriteString(fmt.Sprintf("%v\n", string(b)))
 		w.Flush()
@@ -158,8 +156,7 @@ func read(app todoApp) []todo {
 	todos := make([]todo, 0)
 	f, err := os.OpenFile(app.DataFilePath, os.O_CREATE|os.O_RDONLY, 0644)
 	if err != nil {
-		os.Stderr.WriteString(fmt.Sprintf("unable to read todo file: %v", err))
-		os.Exit(1)
+		reportErrorAndExit("unable to read todo file: %v", err)
 	}
 	defer f.Close()
 	r := bufio.NewScanner(f)
@@ -176,4 +173,9 @@ func backup(todos []todo, path string) error {
 		return write(todos, path)
 	}
 	return nil
+}
+
+func reportErrorAndExit(message string, err error) {
+	os.Stderr.WriteString(fmt.Sprintf(message, err))
+	os.Exit(1)
 }
